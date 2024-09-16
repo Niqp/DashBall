@@ -1,3 +1,7 @@
+const ballRadius = 10;
+const ballPointDistance = ballRadius*2
+
+
 // Create a Pixi Application
 let app = new PIXI.Application({ 
     width: 800,         // default: 800
@@ -19,10 +23,10 @@ platform.endFill();
 // Add the platform to the PixiJS application
 app.stage.addChild(platform);
 
-function createBall(color, x, y, size = 10) {
+function createBall(color, x, y, size = ballRadius) {
     let ball = new PIXI.Graphics();
     ball.beginFill(color);
-    ball.drawCircle(0, 0, size); // Draw a circle with radius 15
+    ball.drawCircle(0, 0, size); // Draw a circle with radius
     ball.endFill();
     ball.x = x;
     ball.y = y;
@@ -32,7 +36,7 @@ function createBall(color, x, y, size = 10) {
 
 const basePoint = new PIXI.Point(100, 100);
 
-function createPointsWithDistanceAndAngle(basePoint, distance, angleInDegrees, numPoints) {
+function createPointsWithDistanceAndAngle(basePoint, angleInDegrees, numPoints) {
     const points = [];
   
     for (let i = 1; i < numPoints+1; i++) {
@@ -40,8 +44,8 @@ function createPointsWithDistanceAndAngle(basePoint, distance, angleInDegrees, n
       const angleInRadians = (angleInDegrees * Math.PI) / 180;
   
       // Calculate the x and y components of the displacement vector
-      const displacementX = distance * Math.cos(angleInRadians);
-      const displacementY = distance * Math.sin(angleInRadians);
+      const displacementX = ballPointDistance * Math.cos(angleInRadians);
+      const displacementY = ballPointDistance * Math.sin(angleInRadians);
   
       // Calculate the coordinates of the new point
       const newX = basePoint.x + i * displacementX;
@@ -55,11 +59,41 @@ function createPointsWithDistanceAndAngle(basePoint, distance, angleInDegrees, n
     return points;
   }
 
+  function createPointsForArc(basePoint, initialAngleInDegrees, arcSpanInDegrees, numPoints) {
+    const points = [];
+
+    // Calculate the angle increment for each point to distribute them evenly along the arc
+    const angleIncrement = arcSpanInDegrees / (numPoints - 1);
+
+    for (let i = 0; i < numPoints; i++) {
+        // Calculate the current angle for the point
+        const currentAngleInDegrees = initialAngleInDegrees + (i * angleIncrement);
+        // Convert degrees to radians
+        const currentAngleInRadians = (currentAngleInDegrees * Math.PI) / 180;
+
+        // Calculate the x and y components of the displacement vector
+        // Assuming the displacement (distance between points) is constant for simplicity
+        const displacementX = ballPointDistance * Math.cos(currentAngleInRadians);
+        const displacementY = ballPointDistance * Math.sin(currentAngleInRadians);
+
+        // Calculate the coordinates of the new point relative to the base point
+        // For an arc, we keep adding the displacement to the base point for the first point,
+        // and then to the last added point, hence creating an arc
+        const newX = (i === 0 ? basePoint.x : points[i-1].x) + displacementX;
+        const newY = (i === 0 ? basePoint.y : points[i-1].y) + displacementY;
+
+        // Create a new point (assuming PIXI.Point or a similar point structure) and add it to the array
+        const newPoint = new PIXI.Point(newX, newY);
+        points.push(newPoint);
+    }
+
+    return points;
+}
+
 
 const pathPoints = [basePoint]
-pathPoints.push(...createPointsWithDistanceAndAngle(basePoint, 20, 90, 12))
-pathPoints.push(...createPointsWithDistanceAndAngle(pathPoints[pathPoints.length-1], 20, 90, 10))
-pathPoints.push(...createPointsWithDistanceAndAngle(pathPoints[pathPoints.length-1], 20, 10, 10))
+pathPoints.push(...createPointsWithDistanceAndAngle(basePoint, 90, 12))
+pathPoints.push(...createPointsForArc(pathPoints[pathPoints.length-1], 90, -90, 10))
 
 
 // Function to linearly interpolate between two points
